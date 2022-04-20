@@ -1,0 +1,222 @@
+close all; clearvars; clc;
+
+root_dir = '/home/robbin/Projects/gait-detection/data/BraViva/derivatives/sub-COKI70025/ses-T2/motion';
+file_name = 'sub-COKI70025_ses-T2_run-20200205_motion.mat';
+channels_table = readtable(fullfile(root_dir, strrep(file_name, '_motion.mat', '_channels.tsv')), ...
+    'FileType', 'text', 'Delimiter', '\t');
+scans_table = readtable(fullfile(strrep(root_dir, '/motion', ''), 'sub-COKI70025_ses-T2_scans.tsv'), ...
+    'FileType', 'text', 'Delimiter', '\t');
+% root_dir = '/home/robbin/Projects/gait-detection/data/BraViva/derivatives/sub-COKI10147/ses-T2/motion';
+% file_name = 'sub-COKI10147_ses-T2_run-20191129_motion.mat';
+% channels_table = readtable(fullfile(root_dir, strrep(file_name, '_motion.mat', '_channels.tsv')), ...
+%     'FileType', 'text', 'Delimiter', '\t');
+% scans_table = readtable(fullfile(strrep(root_dir, '/motion', ''), 'sub-COKI10147_ses-T2_scans.tsv'), ...
+%     'FileType', 'text', 'Delimiter', '\t');
+
+
+tic;
+load(fullfile(root_dir, file_name));
+fs = channels_table.sampling_frequency(1);
+ts_init = scans_table.acq_time_start(strcmp(scans_table.filename, strcat('motion/', file_name)));
+ts = ts_init + seconds((0:size(motion,1)-1)'/fs);
+accX = motion(:,strcmp(channels_table.name, 'ankle_ACC_x')==1);
+accY = motion(:,strcmp(channels_table.name, 'ankle_ACC_y')==1);
+accZ = motion(:,strcmp(channels_table.name, 'ankle_ACC_z')==1);
+accXYZ = [accX, accY, accZ];
+gyrX = motion(:,strcmp(channels_table.name, 'ankle_ANGVEL_x')==1);
+gyrY = motion(:,strcmp(channels_table.name, 'ankle_ANGVEL_y')==1);
+gyrZ = motion(:,strcmp(channels_table.name, 'ankle_ANGVEL_z')==1);
+gyrXYZ = [gyrX, gyrY, gyrZ];
+fprintf('Data has been loaded ... %.2f\n', toc);
+
+gyrXYZ_filt = remove_drift(gyrXYZ);
+fprintf('Drift has been removed ... %.2f\n', toc);
+
+i_midswing = detect_midswing(-gyrXYZ_filt(:,3), ts, fs, 'visualize', 0);
+fprintf('Midswings have been loaded ... %.2f\n', toc);
+
+[WBs, vect_walking] = assemble_WBs(gyrXYZ_filt, fs, i_midswing);
+fprintf('Walking bouts have been assembled ... %.2f\n', toc);
+
+figure; 
+ax1 = subplot(2, 1, 1); grid minor; hold on;
+plot(ax1, ts, accX, 'r-');
+plot(ax1, ts, accY, '-', 'Color', [0, 0.5, 0]);
+plot(ax1, ts, accZ, 'b-')
+xlim([min(ts), max(ts)]);
+ylim([-6, 6]);
+ylabel('acc / in g');
+legend({'accX', 'accY', 'accZ'})
+
+ax2 = subplot(2, 1, 2); grid minor; hold on;
+area(ax2, ts, vect_walking(:,1)*min(gyrXYZ_filt(:,3)), 'FaceColor', [0, 1, 0], 'FaceAlpha', 0.2, 'LineStyle', 'none');
+area(ax2, ts, vect_walking(:,1)*max(gyrXYZ_filt(:,3)), 'FaceColor', [0, 1, 0], 'FaceAlpha', 0.2, 'LineStyle', 'none');
+plot(ax2, ts, gyrXYZ_filt(:,3), '-', 'Color', [0, 0, 1]);
+plot(ax2, ts(i_midswing(vect_walking(i_midswing)==1)), gyrXYZ_filt(i_midswing(vect_walking(i_midswing)==1),3), 'bo');
+xlim([min(ts), max(ts)]);
+ylim([-600, 600]);
+ylabel('angular velocity / degrees/s')
+linkaxes([ax1, ax2], 'x');
+fprintf('Figure has been plotted ... %.2f\n', toc);
+
+function X_filt = remove_drift(X)
+    % Apply a high-pass filter in order to remove drift.
+    % 
+    % Parameters
+    %     X : (NxD) array
+    %         The input signals.
+    % 
+    % Returns
+    %     X_filt : (NxD) array
+    %         The filtered output signals.
+    b = [1, -1];
+    a = [1, -.99];
+    X_filt = filtfilt(b, a, X);
+end
+
+function X_filt = butter_lowpass_filter(X, fs, fc)
+    % Low-pass filter a given input signal, that was sampled origininally
+    % at a sampling frequency, fs, and use the approximate cut-off
+    % frequency, fc.
+    %
+    % Parameters
+    %     X : (NxD) array
+    %         The input data.
+    %     fs : int, float
+    %         The sampling frequency, in Hz, of the input signal.
+    %     fc : int, float
+    %         The cut-off frequency, in Hz.
+    
+    % Get filter coefficients
+    [b, a] = cheby2(10, 30, fc/(fs/2), 'low');
+    X_filt = filtfilt(b, a, X);
+end
+
+function i_midswing = detect_midswing(x, ts, fs, varargin)
+    % Detect midswing from mediolateral angular velocity signal.
+    % 
+    % Parameters
+    %     x : (Nx1) array
+    %         The input signal, in degrees/s.
+    %     fs : int, float
+    %         The sampling frequency, in Hz, of the input signal.
+    % Optional parameters
+    %     thr_min_amplitude : float, int
+    %         Threshold value for the minimum amplitude for a peak to be
+    %         considered a potential midswing, in degrees/s.
+    %         If not given, then it defaults to 50 degrees/s.
+    %     thr_min_time_interval : float, int
+    %         Threshold value for the minimum time interval between two
+    %         successive peaks, in s. If multiple peaks are found within
+    %         this time interval, only the largest peak is retained as a
+    %         potential midswing.
+    %         If not given, then it defaults to 0.5 s.
+    %     visualize : bool, int (0 or 1)
+    %         Whether to plot the results of peak detection.
+    %
+    for i = 1:2:length(varargin)
+        if strcmp(varargin{i}, 'thr_min_amplitude')
+            thr_min_amplitude = varargin{i+1};
+        elseif strcmp(varargin{i}, 'thr_min_time_interval')
+            thr_min_time_interval = varargin{i+1};
+        elseif strcmp(varargin{i}, 'visualize')
+            visualize = varargin{i+1};
+        end
+    end
+    if ~exist('thr_min_amplitude', 'var'); thr_min_amplitude = 50; end
+    if ~exist('thr_min_time_interval', 'var'); thr_min_time_interval = 0.5; end
+    if ~exist('visualize', 'var'); visualize = 1; end
+
+    % Low-pass filter the data -- currently not used
+    fc = 3.2;
+    x_filt = butter_lowpass_filter(x, fs, fc);
+
+    % Find peaks in the signal, greater than a minimum amplitude
+    [~, i_pks] = findpeaks(x_filt, 'MinPeakHeight', thr_min_amplitude, 'MinPeakDistance', thr_min_time_interval*fs);
+    [~, i_midswing] = findpeaks(x, 'MinPeakHeight', thr_min_amplitude, 'MinPeakDistance', thr_min_time_interval*fs);
+
+    % Visualize
+    if visualize
+        figure;
+        ax2 = subplot(2, 1, 2); grid minor; hold on; box off;
+        plot(ax2, ts, x, 'Color', [0, 0, 1, 0.3], 'LineWidth', 3);
+        plot(ax2, ts(i_midswing), x(i_midswing), 'rx');
+        plot(ax2, ts, x_filt, 'b');
+        plot(ax2, ts(i_pks), x_filt(i_pks,1), 'bo');
+        ylabel('ang. vel. / deg/s');
+    end
+
+end
+
+function [WBs, vect_walking] = assemble_WBs(x, fs, i_midswing)
+    % Assemble walking bouts from a series of midswing events.
+    % 
+    % Parameters
+    %     x : (Nx1) array
+    %         The input signal, in degrees/s.
+    %     fs : int, float
+    %         The sampling frequency, in Hz, of the input signal.
+    %     i_midswing : array-like
+    %         Indices corresponding to the occurrence of midswing.
+    % 
+    % Returns
+    %     WBs : struct
+    %         MATLAB struct containing the walking bouts. For each WB the
+    %         following fields are provided,
+    %             start : int
+    %                 Index, corresponding to start of WB.
+    %             end : int
+    %                 Index, corresponding to end of WB.
+    %             midswing : array-;ile
+    %                 Indices correspnding to the occurrence of midswing.
+    %             count : int
+    %     vect_walking : (Nx1) array
+    %         Binary vector signalling walking or not.
+
+    % Iterate over the detected midswings
+    WBs = struct('start', 0, 'end', 0, 'midswings', [], 'count', 0);
+    is_walking = 0;    % walking flag
+    thr_init   = 3.5;  % initial threshold, in s
+    for i = 2:length(i_midswing)
+        if ( i_midswing(i) - i_midswing(i-1) ) / fs < thr_init
+            if is_walking
+                % Add index of midswing to array
+                WBs(end).midswings = [WBs(end).midswings; i_midswing(i)];
+
+                % Increment swings counter
+                WBs(end).count = WBs(end).count + 1;
+
+                % Update the end index
+                WBs(end).end = i_midswing(i);
+            else
+                % Start a new WB
+                WBs(end+1).start   = i_midswing(i-1);
+                WBs(end).end       = i_midswing(i);
+                WBs(end).midswings = [i_midswing(i-1:i)];
+                WBs(end).count     = 2;              
+                
+                % Activate flag
+                is_walking = 1;
+            end
+        else
+            if is_walking
+                % Close walking bout
+                is_walking = 0;
+            else
+                continue;
+            end
+        end
+    end
+
+    % Threshold minimum number of swings
+    WBs([WBs.count]<3) = [];
+
+    % Adjust start and end index with half the mean swing time
+    means = round(([WBs.end]' - [WBs.start]')./([WBs.count]'-1));
+    vect_walking = zeros(length(x),1);
+    for i_WB = 1:length(WBs)
+        WBs(i_WB).start = max(WBs(i_WB).start - means(i_WB), 1);
+        WBs(i_WB).end   = min(WBs(i_WB).end + mean(i_WB), length(x));
+        vect_walking(WBs(i_WB).start:WBs(i_WB).end) = 1;
+    end   
+end
