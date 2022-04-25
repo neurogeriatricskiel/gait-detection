@@ -6,7 +6,8 @@ close all; clearvars; clc;
 addpath(genpath("../unisensMatlabTools"));
 
 %% Destination directory
-dest_dir = "/home/robbin/Projects/gait-detection/data/BraViva/rawdata";
+% dest_dir = "/home/robbin/Projects/gait-detection/data/BraViva/rawdata";
+dest_dir = "/mnt/neurogeriatrics_data/BraViva/Data/rawdata";
 
 
 %% Root directory
@@ -20,7 +21,7 @@ sub_ids  = ["COKI10147", "COKI10166", "COKI70004", ...
 sess     = "T2";
 
 % Loop over the subject ids
-for i_sub = 1:length(sub_ids)
+for i_sub = 2:length(sub_ids)
 
     % Get list of folders for T2
     folder_names = dir(fullfile(root_dir, sub_ids(i_sub), sess));
@@ -102,17 +103,22 @@ for i_sub = 1:length(sub_ids)
         current_date = datestr(S(ii).data(1).acq_time_start, 'yyyymmdd');
         output_filename = strcat('sub-', sub_ids{i_sub}, ...
             '_sess-', sess, ...
-            '_run-', current_date, ...
+            '_tracksys-', 'imu', ...
+            '_date-', current_date, ...
             '.mat');
         data = S(ii).data;
         if ~isfolder(fullfile(dest_dir, strcat('sub-', sub_ids{i_sub})))
             mkdir(fullfile(dest_dir, strcat('sub-', sub_ids{i_sub})));
-            mkdir(fullfile(dest_dir, strcat('sub-', sub_ids{i_sub}), 'motion'));
-        elseif ~isfolder(fullfile(dest_dir, strcat('sub-', sub_ids{i_sub}), 'motion'))
-            mkdir(fullfile(dest_dir, strcat('sub-', sub_ids{i_sub}), 'motion'));
+            mkdir(fullfile(dest_dir, strcat('sub-', sub_ids{i_sub}), strcat('ses-', sess)));
+            mkdir(fullfile(dest_dir, strcat('sub-', sub_ids{i_sub}), strcat('ses-', sess), 'motion'));
+        elseif ~isfolder(fullfile(dest_dir, strcat('sub-', sub_ids{i_sub}), strcat('ses-', sess)))
+            mkdir(fullfile(dest_dir, strcat('sub-', sub_ids{i_sub}), strcat('ses-', sess)));
+            mkdir(fullfile(dest_dir, strcat('sub-', sub_ids{i_sub}), strcat('ses-', sess), 'motion'));
+        elseif ~isfolder(fullfile(dest_dir, strcat('sub-', sub_ids{i_sub}), strcat('ses-', sess), 'motion'))
+            mkdir(fullfile(dest_dir, strcat('sub-', sub_ids{i_sub}), strcat('ses-', sess), 'motion'));
         end
-        if ~isfile(fullfile(dest_dir, strcat('sub-', sub_ids{i_sub}), 'motion', output_filename))
-            save(fullfile(dest_dir, strcat('sub-', sub_ids{i_sub}), 'motion', output_filename), 'data');
+        if ~isfile(fullfile(dest_dir, strcat('sub-', sub_ids{i_sub}), strcat('ses-', sess), 'motion', output_filename))
+            save(fullfile(dest_dir, strcat('sub-', sub_ids{i_sub}), strcat('ses-', sess), 'motion', output_filename), 'data');
         end
     end
     clearvars ii;

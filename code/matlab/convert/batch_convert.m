@@ -9,7 +9,7 @@ dest_dir = '../../../data/BraViva/derivatives';  % destination directory
 
 %% Loop over subject ids
 sub_ids = dir(fullfile(root_dir, 'sub-*'));
-for i_sub = 10:length(sub_ids)
+for i_sub = 1:4%:length(sub_ids)
 
     % Get list of filenames
     file_names = dir(fullfile(sub_ids(i_sub).folder, sub_ids(i_sub).name, 'ses-T2', 'motion', '*.mat'));
