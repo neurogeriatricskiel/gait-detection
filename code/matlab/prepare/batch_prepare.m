@@ -12,18 +12,22 @@ dest_dir = "/mnt/neurogeriatrics_data/BraViva/Data/rawdata";
 
 %% Root directory
 root_dir = "/mnt/neurogeriatrics_data/Braviva/Data";
-sub_ids  = ["COKI10147", "COKI10166", "COKI70004", ...
-    "COKI70006", "COKI70008", "COKI70017", ...
-    "COKI70019", "COKI70020", "COKI70021", ...
-    "COKI70022", "COKI70023", "COKI70024", ...
-    "COKI70025", "COKI70028", "COKI70029", ...
-    "COKI70030", "COKI70031", "COKI70032"];
-sess     = "T2";
+% sub_ids  = ["COKI10147", "COKI10166", "COKI70004", ...
+%     "COKI70006", "COKI70008", "COKI70017", ...
+%     "COKI70019", "COKI70020", "COKI70021", ...
+%     "COKI70022", "COKI70023", "COKI70024", ...
+%     "COKI70025", "COKI70028", "COKI70029", ...
+%     "COKI70030", "COKI70031", "COKI70032"];
+% sess     = "T2";
+sub_ids = ["COKI10166", "COKI70022", "COKI70024", "COKI70025", ...
+    "COKI70026", "COKI70028", "COKI70029", "COKI70030", "COKI70031", ...
+    "COKI70032"];
+sess    = "T1";
 
 % Loop over the subject ids
-for i_sub = 2:length(sub_ids)
+for i_sub = 1:length(sub_ids)
 
-    % Get list of folders for T2
+    % Get list of folders for the current session
     folder_names = dir(fullfile(root_dir, sub_ids(i_sub), sess));
     folder_names = folder_names(3:end);
 
@@ -49,8 +53,12 @@ for i_sub = 2:length(sub_ids)
 
     % Loop over the data folders
     tic;
-    for i = 1:length(folder_names)
-        s(i) = get_movisens_data(fullfile(folder_names(i).folder, folder_names(i).name));
+    for i = length(folder_names):-1:1
+        if ~isempty(get_movisens_data(fullfile(folder_names(i).folder, folder_names(i).name)))
+            s(i) = get_movisens_data(fullfile(folder_names(i).folder, folder_names(i).name));
+        else
+            s(i) = [];
+        end
     end
     clearvars i;
     elapsed_time = toc;

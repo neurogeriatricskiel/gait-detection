@@ -27,15 +27,17 @@ function s = get_movisens_metadata(path)
     else
         return;
     end
+    
+
+    %% Get meta-data
+    
+    meta = xml2struct(fullfile(path, 'unisens.xml'));
     s = struct('tracked_point', tracked_point, ...
         'data', struct("type", '', ...
         'unit', '', ...
         'sampling_frequency', 0, ...
         'data', []), ...
         'acq_time_start', '');
-
-    %% Get meta-data
-    meta = xml2struct(fullfile(path, 'unisens.xml'));
     s.acq_time_start = datetime(meta.unisens.Attributes.timestampStart, 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss.SSS');
     total_time = str2double(meta.unisens.Attributes.duration);  % in seconds
 

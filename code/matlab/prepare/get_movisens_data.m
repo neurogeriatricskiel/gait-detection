@@ -18,5 +18,10 @@ function s = get_movisens_data(path)
     %
 
     %% Get meta-data
+    if ~isfile(fullfile(path, 'unisens.xml'))
+        fprintf('There is not meta-data file available for `%s`\n', fullfile(path, 'unisens.xml'));
+        s = [];
+        return
+    end
     s = get_movisens_metadata(path);
 end
