@@ -12,15 +12,14 @@ dest_dir = "/mnt/neurogeriatrics_data/Braviva/Data/rawdata";
 
 %% Root directory
 root_dir = "/mnt/neurogeriatrics_data/Braviva/Data";
-sub_ids = ["COKI10147", "COKI10181", "COKI10182", "COKI10197", ...
+sub_ids = ["COKI10181", "COKI10182", "COKI10197", ...
     "COKI10199", "COKI20020", "COKI20022", "COKI70001", "COKI70002", ...
-    "COKI70003", "COKI70004", "COKI70005", "COKI70006", "COKI70007", ...
-    "COKI70008", "COKI70011", "COKI70014", "COKI70016", "COKI70017", ...
-    "COKI70018", "COKI70019", "COKI70020", "COKI70021", "COKI70027"];
-sess = "T1";
+    "COKI70003", "COKI70005", "COKI70007", ...
+    "COKI70011", "COKI70014"];
+sess = "T2";
 
 % Loop over the subject ids
-for i_sub = 1%:length(sub_ids)
+for i_sub = 3:length(sub_ids)
 
     % Get current sub id
     sub_id = sub_ids(i_sub);
@@ -148,13 +147,14 @@ for i_sub = 1%:length(sub_ids)
                                 strcat('ses-', sess), 'motion', out_file_name), ...
                                 'data', '-v7.3');
                         else
-                            fprintf('Processed all data for first device, %.1f s\n', toc);
+                            fprintf('Processed all data for %dth device, %.1f s\n', i_device, toc);
                             previous_data = load(fullfile(dest_dir, strcat('sub-', sub_id), ...
                                 strcat('ses-', sess), 'motion', out_file_name));
                             data = [previous_data.data; data];
                             save(fullfile(dest_dir, strcat('sub-', sub_id), ...
                                 strcat('ses-', sess), 'motion', strcat(out_file_name, '.mat')), ...
-                                'data', '-append');
+                                'data', ...
+                                '-append');
                         end
 
                     else

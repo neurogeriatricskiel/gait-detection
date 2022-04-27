@@ -19,9 +19,7 @@ root_dir = "/mnt/neurogeriatrics_data/Braviva/Data";
 %     "COKI70025", "COKI70028", "COKI70029", ...
 %     "COKI70030", "COKI70031", "COKI70032"];
 % sess     = "T2";
-sub_ids = ["COKI10166", "COKI70022", "COKI70024", "COKI70025", ...
-    "COKI70026", "COKI70028", "COKI70029", "COKI70030", "COKI70031", ...
-    "COKI70032"];
+sub_ids = ["COKI10166"];
 sess    = "T1";
 
 % Loop over the subject ids
