@@ -17,7 +17,7 @@ sub_ids = dir(fullfile(root_dir, 'sub-*'));
 
 %% Loop
 % Loop over the subject ids
-for i_sub = length(sub_ids):-1:1
+for i_sub = 8%length(sub_ids):-1:1
     fprintf('Subject Id: %s\n', sub_ids(i_sub).name);
     
     % Get list of sessions
@@ -26,8 +26,6 @@ for i_sub = length(sub_ids):-1:1
     % Loop over the sessions
     for i_session = 1:length(sessions)
         fprintf('    Session: %s\n', sessions(i_session).name);
-        
-    
 
         % Get list of motion files
         mat_files = dir(fullfile(sub_ids(i_sub).folder, ...
