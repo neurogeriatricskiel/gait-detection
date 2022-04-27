@@ -1,4 +1,0 @@
-name	type	component	tracked_point	units	sampling_frequency
-ankle_TEMP	TEMP	n/a	ankle	Grad Celsius	1
-wrist_TEMP	TEMP	n/a	wrist	Grad Celsius	1
-lowBack_TEMP	TEMP	n/a	lowBack	Grad Celsius	1

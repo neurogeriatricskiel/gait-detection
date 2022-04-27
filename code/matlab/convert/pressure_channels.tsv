@@ -1,4 +1,0 @@
-name	type	component	tracked_point	units	sampling_frequency
-ankle_PRESS	PRESS	n/a	ankle	Pa	8
-wrist_PRESS	PRESS	n/a	wrist	Pa	8
-lowBack_PRESS	PRESS	n/a	lowBack	Pa	8
