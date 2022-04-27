@@ -39,5 +39,5 @@ COKI70030 | **MS** | **MS**
 COKI70031 | **MS** | **MS**
 COKI70032 | **MS** | **MS**
 
-GU: GaitUp; MS: Movisens Move 4
+GU: GaitUp; MS: Movisens Move 4  
 $^{1}$ Only data from ankle sensor available.

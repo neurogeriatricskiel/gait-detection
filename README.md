@@ -53,3 +53,22 @@ with $N$ number of timesteps, that is $f_{\mathrm{s}}*60*60*24$ for a full day o
 >>> ts = ts_init + seconds((0:size(data(1).data(1).data,1)-1)'/data(1).data(1).sampling_frequency); % timestamps
 >>> figure; plot(ts, data(1).data(1).data); % Plots the angular rate data of the ankle sensor
 ```
+
+### Derived Data
+Currently, analysis of the IMU data consists of two main applictions:
+1. objective quantification of physical  activity in a general sense, and
+2. detection of walking bouts, and subsequent quantitative and qualitative clinical gait analysis
+
+The derived data are saved in a folder structure according to the following proposed structure:
+```
+.
+├── BraViva/
+│   ├── deriveddata/
+│   │   ├── sub-COKI10147/
+│   │   │   └── ses-T2/
+│   │   │       └── sma/
+│   │   │           ├── sub-COKI10147_ses-T2_tracksys-imu_trackedpoint-ankle_date-20191126.tsv
+│   │   │           ├── sub-COKI10147_ses-T2_tracksys-imu_trackedpoint-ankle_date-20191127.tsv
+│   │   │           ├── ...
+│   │   │           └── sub-COKI10147_ses-T2_tracksys-imu_trackedpoint-wrist-date_20191203.tsv
+```
