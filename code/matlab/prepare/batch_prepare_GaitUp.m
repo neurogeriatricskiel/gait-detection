@@ -19,7 +19,7 @@ sub_ids = ["COKI10181", "COKI10182", "COKI10197", ...
 sess = "T2";
 
 % Loop over the subject ids
-for i_sub = 3:length(sub_ids)
+for i_sub = 1:length(sub_ids)
 
     % Get current sub id
     sub_id = sub_ids(i_sub);
