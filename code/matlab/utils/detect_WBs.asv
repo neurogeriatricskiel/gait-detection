@@ -33,14 +33,12 @@ function WBs = detect_WBs(dir_name, file_name, varargin)
             flip_axis = varargin{i+1};
         elseif strcmpi(varargin{i}, 'visualize')
             visualize = varargin{i+1};
-        elseif strcmpi(varargin{i}, 'write_output')
-            write_output = varargin{i+1};
+        elseif strcmpi(varargin{i}, 'write_out
         end
     end
     if ~exist('axis', 'var'); axis = 3; end
     if ~exist('flip_axis', 'var'); flip_axis = true; end
     if ~exist('visualize', 'var'); visualize = 0; end
-    if ~exist('write_output', 'var'); write_output = 0; end
     
     % Get session, sub id, and main path
     [file_path, ~, ~]     = fileparts(dir_name);
@@ -94,11 +92,11 @@ function WBs = detect_WBs(dir_name, file_name, varargin)
     
     %% Visualize
     if visualize
-        figure('Name', file_name);
+        figure;
         ax1 = subplot(2, 1, 1);
 %         area(ax1, timestamps, max(max(acc_XYZ))*vect_walking, 'FaceColor', [0, 1, 0], 'FaceAlpha', 0.2, 'LineStyle', 'none');
 %         area(ax1, timestamps, min(min(acc_XYZ))*vect_walking, 'FaceColor', [0, 1, 0], 'FaceAlpha', 0.2, 'LineStyle', 'none');
-%         plot(ax1, timestamps, vect_walking*max(max(acc_XYZ)), 'm-', 'LineWidth', 2);
+        plot(ax1, timestamps, vect_walking*max(max(acc_XYZ)), 'm-', 'LineWidth', 2);
         hold on; box off;
         plot(ax1, timestamps, acc_XYZ);
         xlabel('samples');
@@ -107,10 +105,10 @@ function WBs = detect_WBs(dir_name, file_name, varargin)
         ax2 = subplot(2, 1, 2);
 %         area(ax2, timestamps, max(max(gyro_XYZ_hp))*vect_walking, 'FaceColor', [0, 1, 0], 'FaceAlpha', 0.2, 'LineStyle', 'none');
 %         area(ax2, timestamps, min(min(gyro_XYZ_hp))*vect_walking, 'FaceColor', [0, 1, 0], 'FaceAlpha', 0.2, 'LineStyle', 'none');
-%         plot(ax2, timestamps, vect_walking*max(max(gyro_XYZ)), 'm-', 'LineWidth', 2);
+        plot(ax2, timestamps, vect_walking*max(max(gyro_XYZ)), 'm-', 'LineWidth', 2);
         hold on; box off;
         plot(ax2, timestamps, gyro_XYZ_hp);
-        plot(ax2, timestamps(ix_midswings), gyro_XYZ_hp(ix_midswings,axis), 'x', 'MarkerSize', 12, 'LineWidth', 3);
+        plot(ax2, timestamps(ix_midswings), gyro_XYZ_hp(ix_midswings,3), 'x');
         xlabel('samples');
         ylabel(sprintf('angular velocity (in %s)', gyro_unit));
 

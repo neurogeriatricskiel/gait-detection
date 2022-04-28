@@ -111,12 +111,11 @@ function [WBs, vect_walking, vect_gait_events] = assemble_WBs(x, fs, i_midswing,
     for i_WB = 1:length(WBs)
         if any(isnan(WBs(i_WB).ICs))
             WBs(i_WB).FCs(isnan(WBs(i_WB).ICs)) = [];
-            WBs(i_WB).midswings(isnan(WBs(i_WB).ICs)) = [];
+            WBs(i_WB).FCs(isnan(WBs(i_WB).ICs)) = [];
             WBs(i_WB).ICs(isnan(WBs(i_WB).ICs)) = [];
         end
         if any(isnan(WBs(i_WB).FCs))
             WBs(i_WB).ICs(isnan(WBs(i_WB).FCs)) = [];
-            WBs(i_WB).midswings(isnan(WBs(i_WB).FCs)) = [];
             WBs(i_WB).FCs(isnan(WBs(i_WB).FCs)) = [];
         end
         WBs(i_WB).start = max(WBs(i_WB).start - mn(i_WB), 1);
