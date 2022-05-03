@@ -7,7 +7,7 @@ Currently, analysis of the IMU data from home assessments consists of two main a
 
 **1. Objective quantification of physical activity**  
 Physical activity (PA) is quantified by means of the so-called signal magnitude area (SMA). This measure has previously been used as a feature to detect dynamic activities from accelerometer readings, and its main benefit over simply using the acceleration norm is that it accounts for both amplitude and duratoin of a certain activity.  
-*TODO*: add description of methods based on reference works!
+For description of corresponding reference works, see: https://bit.ly/3FaLfDB
 
 **2. Detection of walking bouts, and subsequent clinical gait analysis**  
 Walking bouts (WBs) are detected from the mediolateral angular velocity of an ankle-worn inertial measurement unit (IMU). Here, ankle-worn refers to a device that is worn laterally just above the ankle joint.  
