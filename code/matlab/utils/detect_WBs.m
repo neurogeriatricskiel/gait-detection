@@ -116,6 +116,21 @@ function WBs = detect_WBs(dir_name, file_name, varargin)
 
         linkaxes([ax1, ax2], 'x');
     end
+
+    %% Select WBs
+    thr_min_WB_duration = round(120*gyro_fs);
+    WBs_select = WBs(([WBs.end]'-[WBs.start]')>=thr_min_WB_duration);
+    visualize = 1;
+    if visualize
+        for i_WB = 1:length(WBs_select)
+            figure('Name', sprintf('%s: %3d / %3d', file_name, i_WB, length(WBs_select)));
+            ax1 = subplot(1, 1, 1);
+            plot(ax1, timestamps(WBs_select(i_WB).start-2*gyro_fs:WBs_select(i_WB).end+2*gyro_fs), gyro_XYZ_hp(WBs_select(i_WB).start-2*gyro_fs:WBs_select(i_WB).end+2*gyro_fs,3));
+            grid minor; hold on; box off;
+            plot(ax1, [timestamps(WBs_select(i_WB).start), timestamps(WBs_select(i_WB).end)], [-400, -400], 'k-', 'LineWidth', 6);
+        end
+    end
+    visualize = 0;
     
     %% Write output
     if write_output

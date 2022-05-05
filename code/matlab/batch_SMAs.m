@@ -22,7 +22,7 @@ sub_ids = dir(fullfile(root_dir, 'sub-*'));
 
 %% Loop
 % Loop over the subject ids
-for i_sub = 1:2%1:length(sub_ids)
+for i_sub = 3:1:length(sub_ids)
     fprintf('Subject Id: %s\n', sub_ids(i_sub).name);
     
     % Get list of sessions
