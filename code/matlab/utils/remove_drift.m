@@ -9,6 +9,6 @@ function X_filt = remove_drift(X)
     %     X_filt : (NxD) array
     %         The filtered output signals.
     b = [1, -1];
-    a = [1, -.99];
+    a = [1, -.995];
     X_filt = filtfilt(b, a, X);
 end

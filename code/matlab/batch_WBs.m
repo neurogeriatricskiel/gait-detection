@@ -6,9 +6,11 @@ visualize = 1;
 % Set root directory
 if strcmp(computer('arch'), 'win64')
     root_dir = 'Z:\\Braviva\\Data\\rawdata';
+    subs_file = 'subs.tsv';
     addpath(genpath('.\\utils'));
 else
     root_dir = '/mnt/neurogeriatrics_data/Braviva/Data/rawdata';
+    subs_file = 'subs.tsv';
     addpath(genpath('./utils'));
 end
 
@@ -16,13 +18,13 @@ end
 sub_ids = dir(fullfile(root_dir, 'sub-*'));
 
 % Get tabular data on which devices were worn
-tbl_devices = readtable('../../devices.tsv', 'FileType', 'text', ...
+tbl_subs = readtable(fullfile(root_dir, subs_file), 'FileType', 'text', ...
     'Delimiter', '\t', 'TreatAsMissing', {'n/a'}, ...
     'VariableNamesLine', 1);
 
 %% Loop
 % Loop over the subject ids
-for i_sub = 33:1:length(sub_ids)
+for i_sub = 28:length(sub_ids)
     fprintf('Subject Id: %s\n', sub_ids(i_sub).name);
     
     % Get list of sessions
@@ -36,32 +38,28 @@ for i_sub = 33:1:length(sub_ids)
         mat_files = dir(fullfile(sessions(i_session).folder, ...
             sessions(i_session).name, 'motion', '*.mat'));
 
-        % Loop over the motion files
-        if contains(sessions(i_session).name, 'T1')
-            device_manufacturer = char(tbl_devices.T1(strcmp(tbl_devices.sub_id, sub_ids(i_sub).name(end-8:end))));
-        elseif contains(sessions(i_session).name, 'T2')
-            device_manufacturer = char(tbl_devices.T2(strcmp(tbl_devices.sub_id, sub_ids(i_sub).name(end-8:end))));
-        end
-        fprintf('    Manufacturer: %s\n', device_manufacturer);
-        
-        % Set axis, and flip if necessary
-        if strcmpi(device_manufacturer, 'GU')
-            axis = 1;
-            flip_axis = 0;
-        else
-            axis = 3;
-            flip_axis = 1;
-        end
-        
+        % Loop over the files
         for i_file = 1:1:length(mat_files)
 
             % Get filename
             file_name = mat_files(i_file).name;
             fprintf('        File: %s\n', file_name);
+
+            % Determine function input args
+            axis = tbl_subs.axis(find(ismember(tbl_subs.file_name, file_name)==1,1));
+            flip_axis = tbl_subs.flip_axis(find(ismember(tbl_subs.file_name, file_name)==1,1));
+            % axis = 1;
+            % flip_axis = 0;
+
+            if isnan(axis) || isnan(flip_axis)
+                fprintf('                Medio-lateral axis could not be determined. Continue with next file.\n');
+                continue; % to next file
+            end
             
             % Detect walking bouts
             detect_WBs(mat_files(i_file).folder, mat_files(i_file).name, ...
-                'axis', axis, 'flip_axis', flip_axis, 'visualize', 0);
+                'axis', axis, 'flip_axis', flip_axis, 'visualize', 0, ...
+                'write_output', 1);
         end
     end
 end

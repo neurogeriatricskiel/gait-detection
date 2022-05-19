@@ -46,6 +46,7 @@ function WBs = detect_WBs(dir_name, file_name, varargin)
     [file_path, ~, ~]     = fileparts(dir_name);
     [file_path, sess, ~]  = fileparts(file_path);
     [root_dir, sub_id, ~] = fileparts(file_path);
+    curr_date = strrep(file_name(strfind(file_name, '_date-'):end), '.mat', '');
     
     % Set the destination directory
     dest_dir = strrep(root_dir, 'rawdata', 'deriveddata');
@@ -101,7 +102,6 @@ function WBs = detect_WBs(dir_name, file_name, varargin)
 %         plot(ax1, timestamps, vect_walking*max(max(acc_XYZ)), 'm-', 'LineWidth', 2);
         hold on; box off;
         plot(ax1, timestamps, acc_XYZ);
-        xlabel('samples');
         ylabel(sprintf('acceleration (in %s)', acc_unit));
 
         ax2 = subplot(2, 1, 2);
@@ -110,27 +110,79 @@ function WBs = detect_WBs(dir_name, file_name, varargin)
 %         plot(ax2, timestamps, vect_walking*max(max(gyro_XYZ)), 'm-', 'LineWidth', 2);
         hold on; box off;
         plot(ax2, timestamps, gyro_XYZ_hp);
-        plot(ax2, timestamps(ix_midswings), gyro_XYZ_hp(ix_midswings,axis), 'x', 'MarkerSize', 12, 'LineWidth', 3);
-        xlabel('samples');
+        plot(ax2, timestamps(ix_midswings), gyro_XYZ_hp(ix_midswings,axis), 'x', 'MarkerSize', 8, 'LineWidth', 2);
         ylabel(sprintf('angular velocity (in %s)', gyro_unit));
 
         linkaxes([ax1, ax2], 'x');
     end
 
     %% Select WBs
-    thr_min_WB_duration = round(120*gyro_fs);
-    WBs_select = WBs(([WBs.end]'-[WBs.start]')>=thr_min_WB_duration);
-    visualize = 1;
-    if visualize
-        for i_WB = 1:length(WBs_select)
-            figure('Name', sprintf('%s: %3d / %3d', file_name, i_WB, length(WBs_select)));
-            ax1 = subplot(1, 1, 1);
-            plot(ax1, timestamps(WBs_select(i_WB).start-2*gyro_fs:WBs_select(i_WB).end+2*gyro_fs), gyro_XYZ_hp(WBs_select(i_WB).start-2*gyro_fs:WBs_select(i_WB).end+2*gyro_fs,3));
-            grid minor; hold on; box off;
-            plot(ax1, [timestamps(WBs_select(i_WB).start), timestamps(WBs_select(i_WB).end)], [-400, -400], 'k-', 'LineWidth', 6);
+    % Set predefined thresholds for WB duration (in seconds)
+    WB_thresholds = [30, 60, 120];
+
+    % Iterate over the thresholds
+    for i_thr = 1:length(WB_thresholds)
+        if i_thr < length(WB_thresholds)
+            thr_min = WB_thresholds(i_thr);
+            thr_max = WB_thresholds(i_thr+1);
+            subfolder_name = sprintf('%03d-%03d', thr_min, thr_max);
+            fprintf('Analyse WBs with durations: %3d <= t < %3d, | %s\n', thr_min, thr_max, subfolder_name);
+            ix_sel = find(([WBs.end]-[WBs.start]) >= round(thr_min * gyro_fs) & ...
+                ([WBs.end] - [WBs.start]) < round(thr_max * gyro_fs));
+            for i = 1:length(ix_sel)
+                % Crop the signal around the WB, leaving 2 seconds before
+                % and after the start and end of the WB, respectively
+                ix_start = WBs(ix_sel(i)).start - round(2*gyro_fs);
+                ix_end = WBs(ix_sel(i)).end + round(2*gyro_fs);
+                acc = acc_XYZ(ix_start:ix_end,:);
+                gyr = gyro_XYZ(ix_start:ix_end,:);
+                fs = gyro_fs;
+                if ~isfolder(fullfile(dest_dir, sub_id, sess, 'walkingBouts', subfolder_name))
+                    mkdir(fullfile(dest_dir, sub_id, sess, 'walkingBouts', subfolder_name));
+                end
+                save(fullfile(dest_dir, sub_id, sess, 'walkingBouts', subfolder_name, ...
+                    strcat(sub_id, '_', sess, '_', curr_date, '_WB-', sprintf('%04d', ix_sel(i)), '.mat')), ...
+                    'acc', 'gyr', 'fs');
+            end
+        else
+            thr_min = WB_thresholds(i_thr);
+            thr_max = Inf;
+            subfolder_name = sprintf('%03d-%03d', thr_min, thr_max);
+            fprintf('Analyse WBs with durations: %3d <= t < %3d, | %s\n', thr_min, thr_max, subfolder_name);
+            ix_sel = find(([WBs.end]-[WBs.start]) >= round(thr_min * gyro_fs) & ...
+                ([WBs.end] - [WBs.start]) < round(thr_max * gyro_fs));
+            for i = 1:length(ix_sel)
+                % Crop the signal around the WB, leaving 2 seconds before
+                % and after the start and end of the WB, respectively
+                ix_start = WBs(ix_sel(i)).start - round(2*gyro_fs);
+                ix_end = WBs(ix_sel(i)).end + round(2*gyro_fs);
+                acc = acc_XYZ(ix_start:ix_end,:);
+                gyr = gyro_XYZ(ix_start:ix_end,:);
+                fs = gyro_fs;
+                if ~isfolder(fullfile(dest_dir, sub_id, sess, 'walkingBouts', subfolder_name))
+                    mkdir(fullfile(dest_dir, sub_id, sess, 'walkingBouts', subfolder_name));
+                end
+                save(fullfile(dest_dir, sub_id, sess, 'walkingBouts', subfolder_name, ...
+                    strcat(sub_id, '_', sess, '_', curr_date, '_WB-', sprintf('%04d', ix_sel(i)), '.mat')), ...
+                    'acc', 'gyr', 'fs');
+            end
         end
     end
-    visualize = 0;
+
+
+% % % %     thr_min_WB_duration = round(120*gyro_fs);
+% % % %     WBs_select = WBs(([WBs.end]'-[WBs.start]')>=thr_min_WB_duration);
+% % % %     visualize = 0;
+% % % %     if visualize
+% % % %         for i_WB = 1:length(WBs_select)
+% % % %             figure('Name', sprintf('%s: %3d / %3d', file_name, i_WB, length(WBs_select)));
+% % % %             ax1 = subplot(1, 1, 1);
+% % % %             plot(ax1, timestamps(WBs_select(i_WB).start-2*gyro_fs:WBs_select(i_WB).end+2*gyro_fs), gyro_XYZ_hp(WBs_select(i_WB).start-2*gyro_fs:WBs_select(i_WB).end+2*gyro_fs,3));
+% % % %             grid minor; hold on; box off;
+% % % %             plot(ax1, [timestamps(WBs_select(i_WB).start), timestamps(WBs_select(i_WB).end)], [-400, -400], 'k-', 'LineWidth', 6);
+% % % %         end
+% % % %     end
+% % % %     visualize = 0;
     
     %% Write output
     if write_output
@@ -156,6 +208,7 @@ function WBs = detect_WBs(dir_name, file_name, varargin)
         timestamps_start(:) = timestamps([WBs.start]');
         timestamps_end = datetime(zeros(length(WBs),1), 0, 0, 0, 0, 0);
         timestamps_end(:) = timestamps([WBs.end]');
+        duration = ([WBs.end]' - [WBs.start]') / gyro_fs;
         num_strides = [WBs.count]';
         cadence = zeros(length(WBs),1);
         avg_stride_time = zeros(length(WBs),1);
@@ -168,9 +221,9 @@ function WBs = detect_WBs(dir_name, file_name, varargin)
 
         if ~isfile(fullfile(dest_dir, sub_id, sess, 'walkingBouts', strrep(output_file_name, '.mat', '.tsv')))
             writetable(table(...
-                timestamps_start, timestamps_end, num_strides, cadence, avg_stride_time, stride_time_var, ...
+                [WBs.start]', [WBs.end]', timestamps_start, timestamps_end, duration, num_strides, cadence, avg_stride_time, stride_time_var, ...
                 'VariableNames', {...
-                'timestamp_start', 'timestamp_end', 'num_strides', ...
+                'ix_start', 'ix_end', 'timestamp_start', 'timestamp_end', 'duration', 'num_strides', ...
                 'cadence', 'avg_stride_time', 'stride_time_var'}), ...
                 fullfile(dest_dir, sub_id, sess, 'walkingBouts', strrep(output_file_name, '.mat', '.tsv')), ...
                 'FileType', 'text', 'Delimiter', '\t');
